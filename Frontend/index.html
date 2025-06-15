@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4CAF50">
+    <title>Kebridahar Registration</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="manifest" href="./manifest.json">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div id="loginScreen" class="login-container">
+        <h1>Login to Enter Data</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <div class="password-container">
+                    <input type="password" id="password" required>
+                    <span class="toggle-password" onclick="togglePasswordVisibility()">Show</span>
+                </div>
+                <div id="passwordError" class="error-message">Incorrect password. Please try again.</div>
+            </div>
+            <button type="submit" class="primary-btn">Login</button>
+        </form>
+    </div>
+
+    <div id="successMessage" class="success-message">
+        <span class="success-icon">✓</span>
+        <span id="successText"></span>
+    </div>
+
+    <div id="appContainer" class="container hidden">
+        <div class="user-controls">
+            <span>Logged in as: <strong id="currentUser"></strong> (<span id="userRole"></span>)</span>
+            <button onclick="logout()" class="delete-btn" style="float: right;">Logout</button>
+        </div>
+        
+        <h1>Data Entry Form</h1>
+        
+        <div class="nav-menu">
+            <div class="nav-item active" onclick="showPage('dataEntryPage')">Data Entry Form</div>
+            <div class="nav-item" onclick="showPage('dataPage')">Data</div>
+            <div class="nav-item" onclick="showPage('attendancePage')">Attendance</div>
+            <div id="userManagementNav" class="nav-item hidden" onclick="showPage('userManagementPage')">User Management</div>
+        </div>
+
+        <div id="dataEntryPage" class="page-content">
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalHouseholds">0</div>
+                    <div class="stat-label">Total Registrations</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="currentSectionHouseholds">0</div>
+                    <div class="stat-label" id="currentSectionLabel">Current Section</div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Data Entry Form</h2>
+                <form id="registrationForm">
+                    <!-- Registration form fields here -->
+                </form>
+            </div>
+
+            <div class="recent-registrations">
+                <h3>Recent Registrations</h3>
+                <div class="recent-registrations-container">
+                    <div id="recentDataDisplay" class="recent-registrations-table"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="dataPage" class="page-content hidden">
+            <h2>Data</h2>
+            <div class="export-options">
+                <h3>Export Data</h3>
+                <div class="form-group">
+                    <label for="exportSectionSelect">Select Section:</label>
+                    <select id="exportSectionSelect">
+                        <option value="all">All Sections</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="exportFileName">File Name:</label>
+                    <input type="text" id="exportFileName" placeholder="Enter custom file name">
+                </div>
+                <div class="search-container">
+                    <input type="text" id="exportSearchInput" placeholder="Search records..." onkeyup="searchExportData()">
+                    <div>
+                        <button onclick="exportToPDF()" class="export-btn">Download PDF</button>
+                        <button onclick="exportToExcel()" class="export-btn">Download Excel</button>
+                    </div>
+                </div>
+            </div>
+            <div id="fullDataDisplay"></div>
+        </div>
+
+        <div id="attendancePage" class="page-content hidden">
+            <h2>Attendance</h2>
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="attendanceDate">Select Date:</label>
+                    <input type="date" id="attendanceDate" required>
+                </div>
+                <button onclick="loadAttendanceData()" class="primary-btn">Load Data</button>
+            </div>
+            
+            <div id="attendanceDataContainer" class="hidden">
+                <div class="search-container">
+                    <input type="text" id="attendanceSearchInput" placeholder="Search records..." onkeyup="searchAttendanceData()">
+                    <button onclick="saveAttendance()" class="primary-btn">Confirm Attendance</button>
+                </div>
+                
+                <div id="attendanceDataDisplay"></div>
+                
+                <div class="export-options">
+                    <h3>Export Attendance Data</h3>
+                    <div class="form-group">
+                        <label for="exportAttendanceFileName">File Name:</label>
+                        <input type="text" id="exportAttendanceFileName" placeholder="Enter custom file name">
+                    </div>
+                    <button onclick="exportAttendanceToExcel()" class="export-btn">Download Excel</button>
+                    <button onclick="exportAttendanceToPDF()" class="export-btn">Download PDF</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="userManagementPage" class="page-content hidden">
+            <div class="user-management">
+                <h2>User Management</h2>
+                <div class="tab-container">
+                    <div class="tab active" onclick="switchTab('userListTab')">User List</div>
+                    <div class="tab" onclick="switchTab('addUserTab')">Add New User</div>
+                </div>
+                
+                <div id="userListTab" class="tab-content active">
+                    <div class="user-list">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Section</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userListBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="addUserTab" class="tab-content">
+                    <form id="addUserForm">
+                        <!-- Add user form fields here -->
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>©️ Copyright by DevSinc</p>
+        </footer>
+    </div>
+
+    <script src="./main.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
